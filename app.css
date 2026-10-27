@@ -27,7 +27,21 @@ nav{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);
 nav a{padding:7px 14px;border-radius:999px;color:var(--muted);text-decoration:none;font-weight:500;font-size:14px}
 nav a[aria-current="page"]{background:var(--jade);color:var(--surface)}
 nav a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--jade);outline-offset:2px}
-.decks{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 14px}
+/* Decks: one horizontally scrolling row, with fades and arrows showing when there's more to see. */
+.deckscroll{position:relative;margin:6px 0 14px}
+.decks{display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;overscroll-behavior-x:contain;scroll-behavior:smooth;scroll-snap-type:x proximity;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;touch-action:pan-x;padding:2px 0}
+.decks::-webkit-scrollbar{display:none}
+.chip{flex:none;scroll-snap-align:start}
+.deckscroll::before,.deckscroll::after{content:"";position:absolute;top:0;bottom:0;width:40px;pointer-events:none;opacity:0;transition:opacity .2s;z-index:1}
+.deckscroll::before{left:0;background:linear-gradient(to right,var(--bg),transparent)}
+.deckscroll::after{right:0;background:linear-gradient(to left,var(--bg),transparent)}
+.deckscroll.more-l::before,.deckscroll.more-r::after{opacity:1}
+.deckarrow{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);
+  background:var(--surface);color:var(--ink);box-shadow:var(--shadow);cursor:pointer;display:none;place-items:center;font:inherit;font-size:15px;line-height:1;padding:0}
+.deckarrow.l{left:0}.deckarrow.r{right:0}
+.deckscroll.more-l .deckarrow.l,.deckscroll.more-r .deckarrow.r{display:grid}
+@media (hover:none){.deckscroll .deckarrow{display:none!important}}
 .chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:13.5px;cursor:pointer;display:flex;gap:6px;align-items:center}
 .chip .n{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
 .chip[aria-pressed="true"]{background:var(--jade-soft);border-color:var(--jade);color:var(--ink)}
@@ -136,9 +150,8 @@ nav a .ic{display:none}
   nav a{display:flex;flex-direction:column;align-items:center;gap:1px;padding:5px 4px;font-size:10.5px;flex:1;border-radius:10px}
   nav a .ic{display:block;font-size:20px;line-height:1.1;font-family:var(--f-han)}
   nav a[aria-current="page"]{background:var(--jade-soft);color:var(--jade)}
-  .decks{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:-16px;padding-inline:16px}
-  .decks::-webkit-scrollbar{display:none}
-  .chip{flex:none}
+  .deckscroll{margin-inline:-16px}
+  .decks{padding-inline:16px;scroll-padding-inline:16px}
 }
 @media (display-mode:standalone){header{padding-top:8px}}
 button,select{touch-action:manipulation}

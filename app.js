@@ -46,10 +46,20 @@ if(!canSpeak())document.querySelectorAll(".listenOnly").forEach(x=>x.hidden=true
 function pool(){return D.filter(c=>S.sel.includes(c.deck))}
 function renderDecks(){
   $("decks").innerHTML=Object.entries(DECKS).map(([k,v])=>`<button class="chip" aria-pressed="${S.sel.includes(k)}" data-deck="${k}">${v}<span class="n">${D.filter(c=>c.deck===k).length}</span></button>`).join("");
+  requestAnimationFrame(deckEdges);
 }
 $("decks").addEventListener("click",e=>{const b=e.target.closest("[data-deck]");if(!b)return;const k=b.dataset.deck;
   if(S.sel.includes(k)){if(S.sel.length>1)S.sel=S.sel.filter(x=>x!==k)}else S.sel.push(k);
   save();renderDecks();buildQueue();buildChars();renderProgress()});
+function deckEdges(){const d=$("decks"),w=$("deckscroll");
+  w.classList.toggle("more-l",d.scrollLeft>2);w.classList.toggle("more-r",d.scrollLeft+d.clientWidth<d.scrollWidth-2)}
+$("decks").addEventListener("scroll",deckEdges,{passive:true});
+addEventListener("resize",deckEdges);
+// A vertical mouse wheel scrolls the row sideways on desktop.
+$("decks").addEventListener("wheel",e=>{const d=$("decks");if(Math.abs(e.deltaY)<=Math.abs(e.deltaX)||d.scrollWidth<=d.clientWidth)return;
+  e.preventDefault();d.scrollLeft+=e.deltaY},{passive:false});
+$("deckL").onclick=()=>$("decks").scrollBy({left:-$("decks").clientWidth*.7});
+$("deckR").onclick=()=>$("decks").scrollBy({left:$("decks").clientWidth*.7});
 
 /* ---------- flashcards ---------- */
 let Q=[],qi=0;
