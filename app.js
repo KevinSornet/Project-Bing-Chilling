@@ -170,7 +170,7 @@ function makeQ(c,type){
   if(type==="listen"){const opts=shuffle([c,...distract(c,3,"hz")]).map(x=>x.hz);return{c,type,opts,ans:c.hz}}
   if(type==="type")return{c,type};
   if(type==="write"){const hs=hanChars(c.hz);return{c,type,ch:hs[Math.random()*hs.length|0]}}
-  const opts=shuffle([c,...distract(c,3,"en")]).map(x=>x.en);return{c,type:"meaning",opts,ans:c.en};
+  const opts=shuffle([c,...distract(c,3,"en")]).map(x=>x.en);return{c,type:type==="pymean"?"pymean":"meaning",opts,ans:c.en};
 }
 $("startTest").onclick=()=>{
   const types=[...document.querySelectorAll('input[name=qt]:checked')].map(x=>x.value);
@@ -189,7 +189,8 @@ function askQ(){
   const q=T.items[T.i],c=q.c;$("fbk").textContent="";$("fbk").className="feedback";$("nextQ").hidden=true;
   $("qpos").textContent=`Question ${T.i+1} of ${T.items.length}`;$("tbar").style.width=(T.i/T.items.length*100)+"%";
   let qh="",ah="";
-  if(q.type==="meaning"){qh=`<div class="ask">What does this mean?</div>${hanHtml(c)}`;ah=opts(q,"")}
+  if(q.type==="meaning"){qh=`<div class="ask">What does this mean?</div>${hanHtml(c)}<div class="py" id="pyHint" hidden>${esc(c.py)}</div><button class="ghost" id="showPy">Show pinyin</button>`;ah=opts(q,"")}
+  if(q.type==="pymean"){qh=`<div class="ask">Read the pinyin. What does it mean?</div><div class="py pybig">${esc(c.py)}</div>${canSpeak()?`<button class="ghost" data-say="${esc(c.hz)}">🔊 Hear it</button>`:""}`;ah=opts(q,"")}
   if(q.type==="reverse"){qh=`<div class="ask">Which is the Chinese for…</div><div class="en">${esc(c.en)}</div>`;ah=opts(q,"hanopt")}
   if(q.type==="pinyin"){qh=`<div class="ask">How do you say it? Watch the tones.</div>${hanHtml(c)}<div class="ask">${esc(c.en)}</div>`;ah=opts(q,"pyopt")}
   if(q.type==="listen"){qh=`<div class="ask">Listen and pick the word</div><button class="btn primary" data-say="${esc(c.hz)}">🔊 Play again</button>`;ah=opts(q,"hanopt");setTimeout(()=>say(c.hz),250)}
@@ -215,7 +216,8 @@ $("abox").addEventListener("click",e=>{const b=e.target.closest(".opt");if(!b||!
   const ok=b.dataset.o===q.ans;b.classList.add(ok?"right":"wrong");
   if(!ok)document.querySelectorAll(".opt").forEach(x=>{if(x.dataset.o===q.ans)x.classList.add("right")});
   answer(ok?1:0)});
-$("qbox").addEventListener("click",e=>{const s=e.target.closest("[data-say]");if(s)say(s.dataset.say)});
+$("qbox").addEventListener("click",e=>{const s=e.target.closest("[data-say]");if(s)say(s.dataset.say);
+  if(e.target.id==="showPy"){$("pyHint").hidden=false;e.target.hidden=true}});
 function answer(r,msg){const q=T.items[T.i],c=q.c;T.score+=r;
   gradeCard(c,r===1);
   if(r<1)T.miss.push(c);
@@ -224,9 +226,18 @@ function answer(r,msg){const q=T.items[T.i],c=q.c;T.score+=r;
     (msg?esc(msg):`Answer: <span style="font-family:var(--f-han)">${esc(c.hz)}</span> ${esc(c.py)} · ${esc(c.en)}`);
   $("nextQ").hidden=false;$("nextQ").focus()}
 $("nextQ").onclick=()=>{T.i++;if(T.i>=T.items.length)finish();else askQ()};
-$("quit").onclick=()=>{if(T.i>0||!$("nextQ").hidden)finish(true);else{$("testRun").hidden=true;$("testSetup").hidden=false}};
+// Stopping midway: show results for what's answered so far, or leave without adding a score to the history.
+const answeredSoFar=()=>T?T.i+($("nextQ").hidden?0:1):0;
+function closeTest(){T=null;$("stopBox").hidden=true;$("testRun").hidden=true;$("testDone").hidden=true;$("testSetup").hidden=false;renderHist()}
+$("quit").onclick=()=>{if(!T)return;const n=answeredSoFar();
+  if(!n){closeTest();return}
+  $("stopMsg").textContent=`Stop here? You've answered ${n} of ${T.items.length}.`;
+  $("stopBox").hidden=false;$("stopResults").focus()};
+$("stopCancel").onclick=()=>$("stopBox").hidden=true;
+$("stopResults").onclick=()=>{$("stopBox").hidden=true;finish(true)};
+$("stopDiscard").onclick=closeTest;
 function finish(early){
-  const n=early?T.i+(($("nextQ").hidden)?0:1):T.items.length;
+  const n=early?answeredSoFar():T.items.length;$("stopBox").hidden=true;
   const sc=Math.round(T.score*10)/10;
   S.hist.push({score:sc,n,d:new Date().toLocaleDateString(undefined,{month:"short",day:"numeric"})});S.hist=S.hist.slice(-30);save();
   const pct=n?Math.round(sc/n*100):0;

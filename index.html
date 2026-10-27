@@ -86,6 +86,7 @@
         <div class="label" style="margin-bottom:8px">Question types</div>
         <div class="types">
           <label class="type"><input type="checkbox" name="qt" value="meaning" checked><span><b>Meaning</b><small>See 汉字, pick the English</small></span></label>
+          <label class="type"><input type="checkbox" name="qt" value="pymean"><span><b>Pinyin → meaning</b><small>See only the pinyin, guess the English</small></span></label>
           <label class="type"><input type="checkbox" name="qt" value="reverse" checked><span><b>Reverse</b><small>See English, pick the 汉字</small></span></label>
           <label class="type"><input type="checkbox" name="qt" value="pinyin" checked><span><b>Pinyin & tones</b><small>Pick the right pronunciation</small></span></label>
           <label class="type"><input type="checkbox" name="qt" value="type"><span><b>Type the pinyin</b><small>Tone marks or numbers (hao3)</small></span></label>
@@ -102,7 +103,11 @@
     </div>
   </div>
   <div class="panel" id="testRun" hidden>
-    <div class="row spread"><span class="label" id="qpos"></span><button class="ghost" id="quit">End test</button></div>
+    <div class="row spread"><span class="label" id="qpos"></span><button class="btn stopbtn" id="quit">■ Stop test</button></div>
+    <div class="stopbox" id="stopBox" hidden>
+      <b id="stopMsg">Stop here?</b>
+      <div class="row"><button class="btn primary" id="stopResults">See my results</button><button class="btn" id="stopDiscard">Quit, don't record score</button><button class="ghost" id="stopCancel">Keep going</button></div>
+    </div>
     <div class="progressbar" style="margin-top:6px"><i id="tbar"></i></div>
     <div class="q" id="qbox"></div>
     <div id="abox"></div>

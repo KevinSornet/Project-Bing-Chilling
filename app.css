@@ -248,3 +248,8 @@ button,select{touch-action:manipulation}
 .bar i:nth-child(2){box-shadow:-2px 0 0 var(--surface)}
 label.btn{font:inherit;font-weight:500;border-radius:10px;padding:10px 16px;border:1px solid var(--line);background:var(--surface);color:var(--ink);display:inline-flex;align-items:center}
 .resetbox .btn.again{background:var(--seal);border-color:var(--seal);color:#fff}
+
+/* ---------- test: stop + pinyin questions ---------- */
+button.btn.stopbtn{padding:7px 12px;font-size:13.5px;color:var(--seal);border-color:var(--seal-soft)}
+.stopbox{margin-top:10px;padding:12px 14px;border-radius:12px;background:var(--seal-soft);display:grid;gap:8px}
+.pybig{font-size:clamp(28px,7vw,42px);overflow-wrap:anywhere}
