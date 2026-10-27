@@ -253,3 +253,21 @@ label.btn{font:inherit;font-weight:500;border-radius:10px;padding:10px 16px;bord
 button.btn.stopbtn{padding:7px 12px;font-size:13.5px;color:var(--seal);border-color:var(--seal-soft)}
 .stopbox{margin-top:10px;padding:12px 14px;border-radius:12px;background:var(--seal-soft);display:grid;gap:8px}
 .pybig{font-size:clamp(28px,7vw,42px);overflow-wrap:anywhere}
+
+/* ---------- test: speaking ---------- */
+.speakbox{display:grid;justify-items:center;gap:10px;text-align:center}
+.mic{width:84px;height:84px;border-radius:50%;border:none;background:var(--jade);color:#fff;font-size:34px;cursor:pointer;box-shadow:var(--shadow);display:grid;place-items:center}
+.mic.on{background:var(--seal);animation:micpulse 1.1s ease-in-out infinite}
+.mic:disabled{opacity:.45;cursor:default;animation:none}
+@keyframes micpulse{50%{box-shadow:0 0 0 14px color-mix(in srgb,var(--seal) 20%,transparent)}}
+.micstate{font-size:14px;color:var(--muted);min-height:21px}
+.micstate.ok{color:var(--jade);font-weight:500}.micstate.no{color:var(--seal)}
+.heard{font-size:14px;color:var(--muted);min-height:20px}
+.heard .h{font-family:var(--f-han);font-size:20px;color:var(--ink)}
+.syl{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.sy{display:grid;gap:1px;min-width:52px;padding:6px 8px;border-radius:10px;border:1px solid var(--line);font-size:17px;color:var(--ink);background:var(--bg)}
+.sy small{font-size:11px}
+.sy.ok{background:var(--jade-soft);border-color:var(--jade)}.sy.ok small{color:var(--jade)}
+.sy.tone{background:var(--gold-soft);border-color:var(--gold)}.sy.tone small{color:var(--gold)}
+.sy.miss{background:var(--seal-soft);border-color:var(--seal)}.sy.miss small{color:var(--seal)}
+@media (prefers-reduced-motion:reduce){.mic.on{animation:none}}

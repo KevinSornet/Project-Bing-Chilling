@@ -43,6 +43,8 @@ function speak(text,lang="zh-CN",rate=.8){return new Promise(res=>{
     u.onend=fin;u.onerror=fin;speechSynthesis.speak(u)}catch(e){fin()}})}
 function say(t){if(!canSpeak())return;try{speechSynthesis.cancel()}catch(e){}speak(t)}
 if(!canSpeak())document.querySelectorAll(".listenOnly").forEach(x=>x.hidden=true);
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(!SR)document.querySelectorAll(".speakOnly").forEach(x=>x.hidden=true);
 
 /* ---------- decks ---------- */
 function pool(){return D.filter(c=>S.sel.includes(c.deck))}
@@ -158,6 +160,43 @@ function makeWriter(el,ch,opts={}){
     onLoadCharDataError:()=>{el.innerHTML=`<div class="fallback">${esc(ch)}</div>`;const st=$("wstatus");if(st)st.textContent="Stroke data needs an internet connection the first time."}},opts));
 }
 
+/* ---------- pronunciation check ---------- */
+// The browser's speech recognizer writes down the Chinese it heard; pinyin-pro turns both that and the
+// target word into numbered pinyin so each syllable and tone can be compared.
+const PINYIN_URL="https://cdn.jsdelivr.net/npm/pinyin-pro@3.28.0/dist/index.js";
+let pyLoad=null,rec=null;
+function loadPinyin(){if(window.pinyinPro)return Promise.resolve(pinyinPro);
+  return pyLoad||(pyLoad=new Promise((res,rej)=>{const sc=document.createElement("script");sc.src=PINYIN_URL;
+    sc.onload=()=>res(window.pinyinPro);sc.onerror=()=>{pyLoad=null;rej(new Error("pinyin"))};document.head.appendChild(sc)}))}
+const sylls=txt=>pinyinPro.pinyin(txt,{type:"array",toneType:"num"}).map(x=>x.toLowerCase().replace("v","ü")).filter(x=>/^[a-zü]+[0-5]$/.test(x)).map(x=>({b:x.slice(0,-1),t:+x.slice(-1)}));
+const marks=txt=>pinyinPro.pinyin(txt,{type:"array"}).filter(x=>/[a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü]/i.test(x));
+const strip=t=>hanChars(t).join("");
+// Align heard syllables to target syllables (longest common subsequence on the sounds), then check tones.
+function gradeSpeech(target,heard){
+  const T0=sylls(target),H=sylls(heard),n=T0.length,m=H.length;
+  const L=[...Array(n+1)].map(()=>Array(m+1).fill(0));
+  for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)L[i][j]=T0[i].b===H[j].b?L[i+1][j+1]+1:Math.max(L[i+1][j],L[i][j+1]);
+  const res=T0.map(()=>"miss");let i=0,j=0;
+  while(i<n&&j<m){if(T0[i].b===H[j].b){const a=T0[i].t,b=H[j].t;res[i]=strip(target)===strip(heard)||!a||!b||a===b?"ok":"tone";i++;j++}
+    else if(L[i+1][j]>=L[i][j+1])i++;else j++}
+  const ok=res.filter(x=>x==="ok").length,tone=res.filter(x=>x==="tone").length;
+  const score=n?(ok+tone*.5)/n:0;
+  return{res,score,perfect:n>0&&ok===n,heard}}
+function listenOnce(onInterim){return new Promise((resolve,reject)=>{
+  try{rec&&rec.abort()}catch(e){}
+  const r=new SR();rec=r;r.lang="zh-CN";r.interimResults=true;r.maxAlternatives=5;r.continuous=false;
+  let finals=null,last="";const to=setTimeout(()=>{try{r.stop()}catch(e){}},8000);
+  r.onresult=e=>{const res=e.results[e.results.length-1];last=res[0].transcript;onInterim&&onInterim(last);
+    if(res.isFinal)finals=[...res].map(a=>a.transcript)};
+  r.onerror=e=>{clearTimeout(to);reject(e.error||"error")};
+  r.onend=()=>{clearTimeout(to);if(rec===r)rec=null;resolve(finals||(last?[last]:[]))};
+  try{r.start()}catch(e){clearTimeout(to);reject("start")}})}
+function stopListening(){try{rec&&rec.abort()}catch(e){}rec=null}
+const MIC_ERR={"not-allowed":"Microphone access is blocked. Allow the microphone for this site, then try again.",
+  "service-not-allowed":"Speech recognition is turned off. On iPhone, turn on Settings › General › Keyboard › Enable Dictation.",
+  "no-speech":"I didn't hear anything. Tap the mic and speak a little louder.","audio-capture":"No microphone found.",
+  "network":"Speech recognition needs an internet connection."};
+
 /* ---------- test ---------- */
 let T=null;
 function renderHist(){$("hist").innerHTML=S.hist.length?S.hist.slice(-8).reverse().map(h=>`<span>${h.score}/${h.n} · ${h.d}</span>`).join(""):"<span>No tests yet</span>"}
@@ -168,7 +207,7 @@ function makeQ(c,type){
     const opts=shuffle([c.py,...shuffle([...tv,...others]).filter(x=>x!==c.py).slice(0,3)]);return{c,type,opts,ans:c.py}}
   if(type==="reverse"){const opts=shuffle([c,...distract(c,3,"hz")]).map(x=>x.hz);return{c,type,opts,ans:c.hz}}
   if(type==="listen"){const opts=shuffle([c,...distract(c,3,"hz")]).map(x=>x.hz);return{c,type,opts,ans:c.hz}}
-  if(type==="type")return{c,type};
+  if(type==="type"||type==="speak")return{c,type};
   if(type==="write"){const hs=hanChars(c.hz);return{c,type,ch:hs[Math.random()*hs.length|0]}}
   const opts=shuffle([c,...distract(c,3,"en")]).map(x=>x.en);return{c,type:type==="pymean"?"pymean":"meaning",opts,ans:c.en};
 }
@@ -186,6 +225,7 @@ $("startTest").onclick=()=>{
   $("testSetup").hidden=true;$("testDone").hidden=true;$("testRun").hidden=false;askQ();
 };
 function askQ(){
+  stopListening();
   const q=T.items[T.i],c=q.c;$("fbk").textContent="";$("fbk").className="feedback";$("nextQ").hidden=true;
   $("qpos").textContent=`Question ${T.i+1} of ${T.items.length}`;$("tbar").style.width=(T.i/T.items.length*100)+"%";
   let qh="",ah="";
@@ -200,7 +240,13 @@ function askQ(){
   if(q.type==="write"){const shown=[...c.hz].map(ch=>ch===q.ch?"＿":ch).join("");
     qh=`<div class="ask">Write the missing character from memory</div><div class="han${c.hz.length>4?" long":""}">${esc(shown)}</div><div class="py">${esc(c.py)}</div><div class="ask">${esc(c.en)}</div>`;
     ah=`<div style="display:grid;justify-items:center;gap:8px"><div class="writer" id="twriter"></div><div class="wstatus" id="wstatus"></div><button class="ghost" id="tgive">Show me</button></div>`}
+  if(q.type==="speak"){qh=`<div class="ask">Say this out loud in Mandarin</div>${hanHtml(c)}<div class="py" id="pyHint" hidden>${esc(c.py)}</div><div class="ask">${esc(c.en)}</div>
+      <div class="row" style="justify-content:center"><button class="ghost" id="showPy">Show pinyin</button>${canSpeak()?`<button class="ghost" data-say="${esc(c.hz)}">🔊 Hear it first</button>`:""}</div>`;
+    ah=`<div class="speakbox"><button class="mic" id="micBtn" aria-label="Tap and speak"><span>🎤</span></button><div class="micstate" id="micState">Tap the mic, then say it</div>
+      <div class="heard" id="heard"></div><div class="syl" id="sylRow"></div>
+      <div class="row" style="justify-content:center"><button class="btn" id="spMove" hidden>Move on</button><button class="ghost" id="spSkip">I can't say it yet</button></div></div>`}
   $("qbox").innerHTML=qh;$("abox").innerHTML=ah;
+  if(q.type==="speak")setupSpeak(q);
   if(q.type==="type"){$("tin").focus();$("tform").onsubmit=e=>{e.preventDefault();const r=checkTyped($("tin").value,c.py);$("tin").disabled=true;answer(r,r===.5?`Almost. Check the tones: ${c.py}`:null)}}
   if(q.type==="write"){const w=makeWriter($("twriter"),q.ch,{showCharacter:false,showOutline:false});let over=false;
     w.quiz({showHintAfterMisses:3,
@@ -210,6 +256,30 @@ function askQ(){
         const r=m<=1?1:m<=4?.5:0;S.cbox[q.ch]=r===1?Math.min(cbox(q.ch)+1,5):0;
         answer(r,r===.5?`Written with ${m} slips. ${q.ch} in ${c.hz} (${c.py})`:null)}});
     $("tgive").onclick=()=>{if(over)return;over=true;$("tgive").hidden=true;w.cancelQuiz();w.showOutline();w.animateCharacter();S.cbox[q.ch]=0;answer(0)}}
+}
+function setupSpeak(q){const c=q.c;let best=null,tries=0,busy=false,over=false;
+  const done=r=>{if(over)return;over=true;stopListening();$("micBtn").disabled=true;$("spMove").hidden=true;$("spSkip").hidden=true;
+    answer(r,r===1?null:best?`${r===.5?"Close":"Not quite"}. Say it like this: ${c.hz} ${c.py}`:null);if(canSpeak())setTimeout(()=>say(c.hz),300)};
+  const show=g=>{const mk=marks(c.hz);
+    $("heard").innerHTML=`Heard: <span class="h">${esc(g.heard||"…")}</span>`;
+    $("sylRow").innerHTML=g.res.map((x,i)=>`<span class="sy ${x}" title="${x==="ok"?"Good":x==="tone"?"Tone off":"Not heard"}">${esc(mk[i]||"")}<small>${x==="ok"?"✓":x==="tone"?"tone":"✗"}</small></span>`).join("")};
+  $("spSkip").onclick=()=>done(0);
+  $("spMove").onclick=()=>done(best?best.score>=.99?1:best.score>=.5?.5:0:0);
+  $("micBtn").onclick=async()=>{if(busy||over)return;busy=true;const mic=$("micBtn"),st=$("micState");
+    try{await loadPinyin()}catch(e){st.textContent="Couldn't load the pinyin checker. Check your internet connection.";busy=false;return}
+    try{speechSynthesis.cancel()}catch(e){}
+    mic.classList.add("on");st.className="micstate";st.textContent="Listening… say it now";$("heard").textContent="";
+    try{const alts=await listenOnce(t=>{$("heard").innerHTML=`Heard: <span class="h">${esc(t)}</span>`});
+      mic.classList.remove("on");busy=false;if(over)return;
+      if(!alts.length){st.className="micstate no";st.textContent=MIC_ERR["no-speech"];return}
+      tries++;const g=alts.map(a=>gradeSpeech(c.hz,a)).sort((a,b)=>b.score-a.score)[0];
+      if(!best||g.score>best.score)best=g;show(g);
+      if(g.perfect){st.className="micstate ok";st.textContent="Sounds right!";done(1);return}
+      st.className="micstate no";
+      st.textContent=g.res.includes("tone")&&g.score>=.5?"Close. Some tones were off. Try again":"Not quite. Listen and try again";
+      $("spMove").hidden=false;
+      if(tries>=3){st.textContent+=" (best of 3 counted)";done(best.score>=.5?.5:0)}
+    }catch(err){mic.classList.remove("on");busy=false;st.className="micstate no";st.textContent=MIC_ERR[err]||"Speech recognition stopped. Tap the mic to try again."}};
 }
 function opts(q,cls){return `<div class="opts">${q.opts.map(o=>`<button class="opt ${cls}" data-o="${esc(o)}">${esc(o)}</button>`).join("")}</div>`}
 $("abox").addEventListener("click",e=>{const b=e.target.closest(".opt");if(!b||!T)return;const q=T.items[T.i];
@@ -229,7 +299,7 @@ function answer(r,msg){const q=T.items[T.i],c=q.c;T.score+=r;
 $("nextQ").onclick=()=>{T.i++;if(T.i>=T.items.length)finish();else askQ()};
 // Stopping midway: show results for what's answered so far, or leave without adding a score to the history.
 const answeredSoFar=()=>T?T.i+($("nextQ").hidden?0:1):0;
-function closeTest(){T=null;$("stopBox").hidden=true;$("testRun").hidden=true;$("testDone").hidden=true;$("testSetup").hidden=false;renderHist()}
+function closeTest(){stopListening();T=null;$("stopBox").hidden=true;$("testRun").hidden=true;$("testDone").hidden=true;$("testSetup").hidden=false;renderHist()}
 $("quit").onclick=()=>{if(!T)return;const n=answeredSoFar();
   if(!n){closeTest();return}
   $("stopMsg").textContent=`Stop here? You've answered ${n} of ${T.items.length}.`;
@@ -238,7 +308,7 @@ $("stopCancel").onclick=()=>$("stopBox").hidden=true;
 $("stopResults").onclick=()=>{$("stopBox").hidden=true;finish(true)};
 $("stopDiscard").onclick=closeTest;
 function finish(early){
-  const n=early?answeredSoFar():T.items.length;$("stopBox").hidden=true;
+  stopListening();const n=early?answeredSoFar():T.items.length;$("stopBox").hidden=true;
   const sc=Math.round(T.score*10)/10;
   S.hist.push({score:sc,n,d:new Date().toLocaleDateString(undefined,{month:"short",day:"numeric"})});S.hist=S.hist.slice(-30);save();
   const pct=n?Math.round(sc/n*100):0;
@@ -454,6 +524,7 @@ function route(){const prev=view;view=VIEWS.includes(location.hash.slice(1))?loc
   VIEWS.forEach(v=>$("v-"+v).hidden=v!==view);$("deckbar").hidden=view==="home";
   document.querySelectorAll("nav a").forEach(a=>a.setAttribute("aria-current",a.dataset.view===view?"page":"false"));
   if(prev==="listen"&&view!=="listen")pauseLesson();
+  if(view!=="test")stopListening();
   if(view==="home")renderHome();if(view==="test")renderHist();if(view==="chars")showChar();if(view==="cards")fitCard()}
 addEventListener("hashchange",route);
 document.addEventListener("visibilitychange",()=>{if(document.hidden)pauseLesson()});
