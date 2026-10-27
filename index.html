@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hanzi Practice</title>
+<meta name="description" content="Mandarin flashcards, tests, guided audio lessons and character practice.">
+<meta name="theme-color" content="#f3f5f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121815" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Hanzi">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@500;700&display=swap">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="brand"><div class="seal">学</div><div><h1>Hanzi Practice</h1><p>Your class vocabulary · Mandarin with Hokkien</p></div></div>
+  <span class="streak" id="streak" hidden></span>
+  <nav aria-label="Sections">
+    <a href="#cards" data-view="cards"><span class="ic">卡</span>Cards</a>
+    <a href="#test" data-view="test"><span class="ic">考</span>Test</a>
+    <a href="#listen" data-view="listen"><span class="ic">听</span>Listen</a>
+    <a href="#chars" data-view="chars"><span class="ic">字</span>Characters</a>
+    <a href="#progress" data-view="progress"><span class="ic">进</span>Progress</a>
+  </nav>
+</header>
+
+<div class="label">Decks</div>
+<div class="decks" id="decks"></div>
+
+<!-- FLASHCARDS -->
+<section id="v-cards">
+  <div class="row spread">
+    <div class="row">
+      <select id="front" aria-label="Card front">
+        <option value="han">Chinese → English</option>
+        <option value="en">English → Chinese</option>
+        <option value="hanonly">Characters only (no pinyin)</option>
+      </select>
+      <select id="order" aria-label="Order">
+        <option value="weak">Weakest first</option>
+        <option value="shuffle">Shuffled</option>
+        <option value="list">Class order</option>
+      </select>
+    </div>
+    <div class="row"><label class="row" style="gap:6px;font-size:13px;color:var(--muted)"><input type="checkbox" id="showHk" checked> Show Hokkien</label>
+      <label class="row" style="gap:6px;font-size:13px;color:var(--muted)"><input type="checkbox" id="autoSay"> Auto-play audio</label></div>
+  </div>
+  <div class="stage">
+    <div class="card" id="card" tabindex="0" role="button" aria-label="Flip card">
+      <div class="face front" id="ff"></div>
+      <div class="face back" id="fb"></div>
+    </div>
+  </div>
+  <div class="ctrl">
+    <button class="btn nav" id="prev" aria-label="Previous card">←</button>
+    <button class="btn again" id="again">Again <small style="opacity:.7">(1)</small></button>
+    <button class="btn got" id="got">Got it <small style="opacity:.7">(2)</small></button>
+    <button class="btn nav" id="next" aria-label="Next card">→</button>
+  </div>
+  <div class="row spread" style="margin-top:10px;font-size:13px;color:var(--muted)">
+    <span id="pos"></span><span class="kbd-hint">Space to flip · ← → to move · swipe on phone</span>
+  </div>
+  <div class="progressbar"><i id="pbar"></i></div>
+</section>
+
+<!-- TEST -->
+<section id="v-test" hidden>
+  <div class="panel" id="testSetup">
+    <div class="setup">
+      <div>
+        <div class="label" style="margin-bottom:8px">Question types</div>
+        <div class="types">
+          <label class="type"><input type="checkbox" name="qt" value="meaning" checked><span><b>Meaning</b><small>See 汉字, pick the English</small></span></label>
+          <label class="type"><input type="checkbox" name="qt" value="reverse" checked><span><b>Reverse</b><small>See English, pick the 汉字</small></span></label>
+          <label class="type"><input type="checkbox" name="qt" value="pinyin" checked><span><b>Pinyin & tones</b><small>Pick the right pronunciation</small></span></label>
+          <label class="type"><input type="checkbox" name="qt" value="type"><span><b>Type the pinyin</b><small>Tone marks or numbers (hao3)</small></span></label>
+          <label class="type listenOnly"><input type="checkbox" name="qt" value="listen"><span><b>Listening</b><small>Hear it, pick the word</small></span></label>
+          <label class="type"><input type="checkbox" name="qt" value="write"><span><b>Write it</b><small>Draw a character from memory</small></span></label>
+        </div>
+      </div>
+      <div class="row spread">
+        <div class="row"><label class="label" for="qcount">Questions</label>
+          <select id="qcount"><option>10</option><option selected>20</option><option>30</option><option value="all">All</option></select></div>
+        <button class="btn primary" id="startTest">Start test</button>
+      </div>
+      <div><div class="label">Recent scores</div><div class="hist" id="hist"><span>No tests yet</span></div></div>
+    </div>
+  </div>
+  <div class="panel" id="testRun" hidden>
+    <div class="row spread"><span class="label" id="qpos"></span><button class="ghost" id="quit">End test</button></div>
+    <div class="progressbar" style="margin-top:6px"><i id="tbar"></i></div>
+    <div class="q" id="qbox"></div>
+    <div id="abox"></div>
+    <div class="feedback" id="fbk" aria-live="polite"></div>
+    <div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn primary" id="nextQ" hidden>Next</button></div>
+  </div>
+  <div class="panel" id="testDone" hidden></div>
+</section>
+
+<!-- GUIDED AUDIO -->
+<section id="v-listen" hidden>
+  <div class="panel" id="lsetup">
+    <div class="setup">
+      <div>
+        <div class="label" style="margin-bottom:8px">Lesson type</div>
+        <div class="lesson-opts">
+          <label class="mode"><input type="radio" name="lmode" value="learn" checked><span><b>Learn</b><small>Chinese, English meaning, then repeat it back after the pause</small></span></label>
+          <label class="mode"><input type="radio" name="lmode" value="recall"><span><b>Recall</b><small>Hear the English, say the Chinese in the pause, then hear the answer</small></span></label>
+          <label class="mode"><input type="radio" name="lmode" value="shadow"><span><b>Shadow</b><small>Chinese only, slow then normal. Copy the tones out loud</small></span></label>
+          <label class="mode"><input type="radio" name="lmode" value="sentences"><span><b>Sentences</b><small>Words in context with the example sentences</small></span></label>
+        </div>
+      </div>
+      <div class="row" style="gap:16px">
+        <label class="row"><span class="label">Words</span><select id="lcount"><option>10</option><option selected>15</option><option>25</option><option value="all">All</option></select></label>
+        <label class="row"><span class="label">Speed</span><select id="lrate"><option value=".6">Slow</option><option value=".8" selected>Normal</option><option value="1">Native</option></select></label>
+        <label class="row"><span class="label">Pause</span><select id="lgap"><option value="2000">Short</option><option value="3500" selected>Medium</option><option value="5500">Long</option></select></label>
+        <label class="row" style="gap:6px;font-size:13px;color:var(--muted)"><input type="checkbox" id="lhide"> Hide text (ears only)</label>
+      </div>
+      <div class="row spread"><span class="note" id="voiceNote" style="margin:0"></span><button class="btn primary" id="lstart">▶ Start lesson</button></div>
+    </div>
+  </div>
+  <div class="panel" id="lplay" hidden>
+    <div class="row spread"><span class="label" id="lpos"></span><button class="ghost" id="lstop">End lesson</button></div>
+    <div class="progressbar" style="margin-top:6px"><i id="lbar"></i></div>
+    <div class="player">
+      <div class="pulse" id="lpulse"></div>
+      <div id="lcard"></div>
+      <div class="stepline" id="lstep" aria-live="polite"></div>
+    </div>
+    <div class="pctrl">
+      <button class="btn" id="lback" aria-label="Previous word">⏮</button>
+      <button class="btn" id="lreplay">↻ Repeat</button>
+      <button class="btn primary" id="lpause">❚❚ Pause</button>
+      <button class="btn" id="lskip" aria-label="Next word">⏭</button>
+    </div>
+    <div class="pctrl" style="margin-top:8px">
+      <button class="btn again" id="lhard">Hard, review later</button>
+      <button class="btn got" id="leasy">I knew it</button>
+    </div>
+  </div>
+  <div class="panel" id="ldone" hidden></div>
+  <p class="note">Tip: keep the screen on during a lesson. On iPhone, audio stops if the phone locks, and the mute switch can silence it.</p>
+</section>
+
+<!-- CHARACTERS -->
+<section id="v-chars" hidden>
+  <div class="panel">
+    <div class="charstudy">
+      <div style="display:grid;gap:10px;justify-items:center">
+        <div class="writer" id="writer"></div>
+        <div class="tabs2" id="wmode">
+          <button data-m="watch" aria-pressed="true">Watch</button>
+          <button data-m="trace">Trace</button>
+          <button data-m="recall">From memory</button>
+        </div>
+      </div>
+      <div class="charinfo" id="charinfo"></div>
+    </div>
+    <div class="row spread" style="margin-top:14px">
+      <button class="btn" id="cprev">← Prev</button>
+      <span class="label" id="cpos"></span>
+      <button class="btn" id="cnext">Next →</button>
+    </div>
+  </div>
+  <div class="row spread" style="margin:18px 0 8px">
+    <div class="label">Characters in these decks</div>
+    <select id="corder" aria-label="Character order"><option value="weak">Weakest first</option><option value="list">Class order</option></select>
+  </div>
+  <div class="chargrid" id="chargrid"></div>
+</section>
+
+<!-- PROGRESS -->
+<section id="v-progress" hidden>
+  <div class="panel">
+    <div class="row spread" style="margin-bottom:12px"><div class="legend"><span><i style="background:var(--jade)"></i>Mastered (3+ correct in a row)</span><span><i style="background:var(--gold)"></i>Learning</span><span><i style="background:var(--line)"></i>New</span></div>
+    <button class="ghost" id="reset">Reset progress</button></div>
+    <div class="deckrows" id="deckrows"></div>
+    <p id="resetConfirm" hidden style="margin:12px 0 0;font-size:13.5px">Clear all card progress and test scores? <button class="btn again" id="resetYes" style="padding:6px 12px">Clear</button> <button class="ghost" id="resetNo">Cancel</button></p>
+    <div class="toolrow">
+      <button class="btn" id="exportBtn">Back up progress</button>
+      <label class="btn" style="cursor:pointer">Restore backup<input type="file" id="importFile" accept="application/json,.json" hidden></label>
+    </div>
+    <p class="note" id="syncNote">Progress is saved on this device. Use a backup file to move it between your computer and iPhone.</p>
+  </div>
+  <div class="wordgrid" id="wordgrid"></div>
+</section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
