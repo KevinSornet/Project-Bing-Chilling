@@ -271,3 +271,6 @@ button.btn.stopbtn{padding:7px 12px;font-size:13.5px;color:var(--seal);border-co
 .sy.tone{background:var(--gold-soft);border-color:var(--gold)}.sy.tone small{color:var(--gold)}
 .sy.miss{background:var(--seal-soft);border-color:var(--seal)}.sy.miss small{color:var(--seal)}
 @media (prefers-reduced-motion:reduce){.mic.on{animation:none}}
+.recbox{display:grid;gap:8px;justify-items:center;padding:12px;border-radius:12px;background:var(--bg);border:1px solid var(--line);width:100%;max-width:420px}
+#recBtn.rec{background:var(--seal);border-color:var(--seal);color:#fff}
+.micstate .fix{display:block;margin-top:6px;color:var(--muted);font-size:12.5px;line-height:1.45}

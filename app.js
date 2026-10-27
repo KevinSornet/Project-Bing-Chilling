@@ -44,7 +44,8 @@ function speak(text,lang="zh-CN",rate=.8){return new Promise(res=>{
 function say(t){if(!canSpeak())return;try{speechSynthesis.cancel()}catch(e){}speak(t)}
 if(!canSpeak())document.querySelectorAll(".listenOnly").forEach(x=>x.hidden=true);
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-if(!SR)document.querySelectorAll(".speakOnly").forEach(x=>x.hidden=true);
+const canRecord=!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.MediaRecorder);
+if(!SR&&!canRecord)document.querySelectorAll(".speakOnly").forEach(x=>x.hidden=true);
 
 /* ---------- decks ---------- */
 function pool(){return D.filter(c=>S.sel.includes(c.deck))}
@@ -182,16 +183,32 @@ function gradeSpeech(target,heard){
   const ok=res.filter(x=>x==="ok").length,tone=res.filter(x=>x==="tone").length;
   const score=n?(ok+tone*.5)/n:0;
   return{res,score,perfect:n>0&&ok===n,heard}}
+// Some devices ignore one Chinese language tag and fall back to English, so each English result moves to the next tag.
+const SR_LANGS=["zh-CN","cmn-Hans-CN","zh-Hans-CN","zh"];
+const heardEnglish=alts=>alts.length>0&&alts.every(a=>!HAN.test(a))&&alts.some(a=>/[a-z]/i.test(a));
+const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+const ZH_SETUP=isIOS?"On iPhone, add the Chinese keyboard: Settings › General › Keyboard › Keyboards › Add New Keyboard › Chinese, Simplified (Pinyin). Dictation must be on too."
+  :"On a Mac, add Mandarin under System Settings › Keyboard › Dictation › Languages.";
 function listenOnce(onInterim){return new Promise((resolve,reject)=>{
   try{rec&&rec.abort()}catch(e){}
-  const r=new SR();rec=r;r.lang="zh-CN";r.interimResults=true;r.maxAlternatives=5;r.continuous=false;
+  const r=new SR();rec=r;r.lang=SR_LANGS[(S.srLang||0)%SR_LANGS.length];r.interimResults=true;r.maxAlternatives=5;r.continuous=false;
   let finals=null,last="";const to=setTimeout(()=>{try{r.stop()}catch(e){}},8000);
   r.onresult=e=>{const res=e.results[e.results.length-1];last=res[0].transcript;onInterim&&onInterim(last);
     if(res.isFinal)finals=[...res].map(a=>a.transcript)};
   r.onerror=e=>{clearTimeout(to);reject(e.error||"error")};
   r.onend=()=>{clearTimeout(to);if(rec===r)rec=null;resolve(finals||(last?[last]:[]))};
   try{r.start()}catch(e){clearTimeout(to);reject("start")}})}
-function stopListening(){try{rec&&rec.abort()}catch(e){}rec=null}
+function stopListening(){try{rec&&rec.abort()}catch(e){}rec=null;stopRecording()}
+// Record-and-compare: works without speech recognition; you listen to yourself next to the native audio and judge.
+let mr=null;
+async function recordClip(ms,onStart){
+  const stream=await navigator.mediaDevices.getUserMedia({audio:true});const chunks=[];const m=new MediaRecorder(stream);mr=m;
+  m.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};
+  const stopped=new Promise(r=>m.onstop=r);m.start();onStart&&onStart();
+  const to=setTimeout(()=>{if(m.state!=="inactive")m.stop()},ms);await stopped;clearTimeout(to);
+  stream.getTracks().forEach(t=>t.stop());if(mr===m)mr=null;
+  return chunks.length?new Blob(chunks,{type:m.mimeType||"audio/mp4"}):null}
+function stopRecording(){try{if(mr&&mr.state!=="inactive")mr.stop()}catch(e){}}
 const MIC_ERR={"not-allowed":"Microphone access is blocked. Allow the microphone for this site, then try again.",
   "service-not-allowed":"Speech recognition is turned off. On iPhone, turn on Settings › General › Keyboard › Enable Dictation.",
   "no-speech":"I didn't hear anything. Tap the mic and speak a little louder.","audio-capture":"No microphone found.",
@@ -242,8 +259,13 @@ function askQ(){
     ah=`<div style="display:grid;justify-items:center;gap:8px"><div class="writer" id="twriter"></div><div class="wstatus" id="wstatus"></div><button class="ghost" id="tgive">Show me</button></div>`}
   if(q.type==="speak"){qh=`<div class="ask">Say this out loud in Mandarin</div>${hanHtml(c)}<div class="py" id="pyHint" hidden>${esc(c.py)}</div><div class="ask">${esc(c.en)}</div>
       <div class="row" style="justify-content:center"><button class="ghost" id="showPy">Show pinyin</button>${canSpeak()?`<button class="ghost" data-say="${esc(c.hz)}">🔊 Hear it first</button>`:""}</div>`;
-    ah=`<div class="speakbox"><button class="mic" id="micBtn" aria-label="Tap and speak"><span>🎤</span></button><div class="micstate" id="micState">Tap the mic, then say it</div>
-      <div class="heard" id="heard"></div><div class="syl" id="sylRow"></div>
+    ah=`<div class="speakbox">${SR?`<button class="mic" id="micBtn" aria-label="Tap and speak"><span>🎤</span></button><div class="micstate" id="micState">Tap the mic, then say it</div>
+      <div class="heard" id="heard"></div><div class="syl" id="sylRow"></div>`:`<div class="micstate" id="micState">Record yourself, then compare with the native speaker</div>`}
+      ${canRecord?`<button class="btn" id="recBtn">🎙 Record &amp; compare</button>
+      <div class="recbox" id="recBox" hidden><div class="micstate" id="recState"></div>
+        <div class="row" style="justify-content:center"><button class="btn" id="playMine">▶ Me</button>${canSpeak()?`<button class="btn" id="playNative">🔊 Native</button>`:""}</div>
+        <div class="label">How close were you?</div>
+        <div class="row" style="justify-content:center"><button class="btn got" id="selfOk">Matched it</button><button class="btn" id="selfClose">Close</button><button class="btn again" id="selfNo">Not yet</button></div></div>`:""}
       <div class="row" style="justify-content:center"><button class="btn" id="spMove" hidden>Move on</button><button class="ghost" id="spSkip">I can't say it yet</button></div></div>`}
   $("qbox").innerHTML=qh;$("abox").innerHTML=ah;
   if(q.type==="speak")setupSpeak(q);
@@ -258,20 +280,45 @@ function askQ(){
     $("tgive").onclick=()=>{if(over)return;over=true;$("tgive").hidden=true;w.cancelQuiz();w.showOutline();w.animateCharacter();S.cbox[q.ch]=0;answer(0)}}
 }
 function setupSpeak(q){const c=q.c;let best=null,tries=0,busy=false,over=false;
-  const done=r=>{if(over)return;over=true;stopListening();$("micBtn").disabled=true;$("spMove").hidden=true;$("spSkip").hidden=true;
-    answer(r,r===1?null:best?`${r===.5?"Close":"Not quite"}. Say it like this: ${c.hz} ${c.py}`:null);if(canSpeak())setTimeout(()=>say(c.hz),300)};
+  let clipUrl=null,clip=null;
+  const done=(r,self)=>{if(over)return;over=true;stopListening();["micBtn","recBtn","selfOk","selfClose","selfNo"].forEach(id=>{if($(id))$(id).disabled=true});
+    $("spMove").hidden=true;$("spSkip").hidden=true;
+    answer(r,r===1?null:best||self?`${r===.5?"Close":"Not quite"}. Say it like this: ${c.hz} ${c.py}`:null);
+    if(canSpeak()&&!self)setTimeout(()=>say(c.hz),300)};
+  const playMine=()=>new Promise(res=>{if(!clipUrl)return res();clip=new Audio(clipUrl);clip.onended=res;clip.onerror=res;clip.play().catch(res)});
+  if($("recBtn")){
+    $("recBtn").onclick=async()=>{const b=$("recBtn"),rs=$("recState");
+      if(mr){stopRecording();return}
+      if(busy||over)return;stopListening();try{speechSynthesis.cancel()}catch(e){}
+      $("recBox").hidden=false;
+      try{const blob=await recordClip(Math.max(3500,c.hz.length*900),()=>{b.classList.add("rec");b.textContent="■ Stop recording";rs.className="micstate";rs.textContent="Recording… say it now"});
+        b.classList.remove("rec");b.textContent="🎙 Record again";if(over)return;
+        if(!blob){rs.textContent="Nothing was recorded. Try again.";return}
+        if(clipUrl)URL.revokeObjectURL(clipUrl);clipUrl=URL.createObjectURL(blob);
+        rs.textContent="Playing you, then the native speaker…";await playMine();await sleep(350);if(canSpeak())await speak(c.hz);
+        rs.textContent="Compare them, then pick how close you were"}
+      catch(err){b.classList.remove("rec");b.textContent="🎙 Record & compare";rs.className="micstate no";
+        rs.textContent=err&&err.name==="NotAllowedError"?MIC_ERR["not-allowed"]:"Couldn't record. Check the microphone and try again."}};
+    $("playMine").onclick=()=>{try{speechSynthesis.cancel()}catch(e){}playMine()};
+    if($("playNative"))$("playNative").onclick=()=>{if(clip)clip.pause();say(c.hz)};
+    $("selfOk").onclick=()=>done(1,true);$("selfClose").onclick=()=>done(.5,true);$("selfNo").onclick=()=>done(0,true);
+  }
   const show=g=>{const mk=marks(c.hz);
     $("heard").innerHTML=`Heard: <span class="h">${esc(g.heard||"…")}</span>`;
     $("sylRow").innerHTML=g.res.map((x,i)=>`<span class="sy ${x}" title="${x==="ok"?"Good":x==="tone"?"Tone off":"Not heard"}">${esc(mk[i]||"")}<small>${x==="ok"?"✓":x==="tone"?"tone":"✗"}</small></span>`).join("")};
   $("spSkip").onclick=()=>done(0);
   $("spMove").onclick=()=>done(best?best.score>=.99?1:best.score>=.5?.5:0:0);
-  $("micBtn").onclick=async()=>{if(busy||over)return;busy=true;const mic=$("micBtn"),st=$("micState");
+  if($("micBtn"))$("micBtn").onclick=async()=>{if(busy||over)return;if(mr)stopRecording();busy=true;const mic=$("micBtn"),st=$("micState");
     try{await loadPinyin()}catch(e){st.textContent="Couldn't load the pinyin checker. Check your internet connection.";busy=false;return}
     try{speechSynthesis.cancel()}catch(e){}
     mic.classList.add("on");st.className="micstate";st.textContent="Listening… say it now";$("heard").textContent="";
     try{const alts=await listenOnce(t=>{$("heard").innerHTML=`Heard: <span class="h">${esc(t)}</span>`});
       mic.classList.remove("on");busy=false;if(over)return;
       if(!alts.length){st.className="micstate no";st.textContent=MIC_ERR["no-speech"];return}
+      if(heardEnglish(alts)){S.srLang=((S.srLang||0)+1)%SR_LANGS.length;save();
+        $("sylRow").innerHTML="";$("heard").innerHTML=`Heard English: “${esc(alts[0])}”`;st.className="micstate no";
+        st.innerHTML=`Your device is listening for English, not Mandarin. Tap the mic to try again with a different Chinese setting.<br><small class="fix">${esc(ZH_SETUP)}${canRecord?" Or use Record &amp; compare below.":""}</small>`;
+        return}
       tries++;const g=alts.map(a=>gradeSpeech(c.hz,a)).sort((a,b)=>b.score-a.score)[0];
       if(!best||g.score>best.score)best=g;show(g);
       if(g.perfect){st.className="micstate ok";st.textContent="Sounds right!";done(1);return}
