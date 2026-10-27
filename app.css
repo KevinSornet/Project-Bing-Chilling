@@ -209,3 +209,42 @@ button,select{touch-action:manipulation}
 }
 .toolrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 @media (hover:none){.kbd-hint{display:none}}
+
+/* ---------- home dashboard ---------- */
+.hello{margin:4px 0 14px}
+.hello h2{font-family:var(--f-display);font-size:28px;margin:2px 0 0;letter-spacing:-.01em}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow);display:grid;gap:2px;min-width:0}
+.tile .big{font-family:var(--f-display);font-size:34px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums;color:var(--ink)}
+.tile small{color:var(--muted);font-size:12.5px}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:end;height:150px;margin-top:12px}
+.wk{display:grid;grid-template-rows:1fr auto;height:100%;gap:6px;position:relative;text-align:center}
+.wk .col{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;border-bottom:1px solid var(--line)}
+.wk .b{width:min(28px,70%);border-radius:4px 4px 0 0;background:var(--jade);min-height:0}
+.wk .b.zero{height:2px!important;background:var(--line);border-radius:0}
+.wk .d{font-size:11.5px;color:var(--muted)}
+.wk.today .d{color:var(--ink);font-weight:600}
+.wk .v{font-size:12px;color:var(--ink);font-variant-numeric:tabular-nums;margin-bottom:3px}
+.wk .tip{position:absolute;left:50%;bottom:calc(100% - 4px);transform:translateX(-50%);background:var(--ink);color:var(--surface);font-size:12px;
+  padding:4px 8px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;z-index:3}
+.wk:hover .tip,.wk:focus .tip{opacity:1}
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.quick a{display:grid;gap:2px;align-content:start;text-decoration:none;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow)}
+.quick a:hover{border-color:var(--jade)}
+.quick .qi{font-family:var(--f-han);font-size:22px;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:var(--jade-soft);color:var(--jade);margin-bottom:6px}
+.quick b{font-size:14.5px}.quick small{color:var(--muted);font-size:12.5px}
+.allwords{margin-top:14px}
+.allwords summary{cursor:pointer;color:var(--jade);font-size:14px;font-weight:500}
+.resetbox{margin-top:14px;padding:14px;border-radius:12px;background:var(--seal-soft);display:grid;gap:8px}
+.resetbox p{margin:0;font-size:13.5px}
+@media (max-width:700px){
+  .tiles,.quick{grid-template-columns:1fr 1fr}
+  .tile .big{font-size:28px}
+  .week{height:130px;gap:5px}
+}
+/* Edge tooltips anchor inward so they never widen the page. */
+.wk:nth-child(-n+2) .tip{left:0;transform:none}
+.wk:nth-last-child(-n+2) .tip{left:auto;right:0;transform:none}
+.bar i:nth-child(2){box-shadow:-2px 0 0 var(--surface)}
+label.btn{font:inherit;font-weight:500;border-radius:10px;padding:10px 16px;border:1px solid var(--line);background:var(--surface);color:var(--ink);display:inline-flex;align-items:center}
+.resetbox .btn.again{background:var(--seal);border-color:var(--seal);color:#fff}

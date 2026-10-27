@@ -25,19 +25,21 @@
   <div class="brand"><div class="seal">学</div><div><h1>Hanzi Practice</h1><p>Your class vocabulary · Mandarin with Hokkien</p></div></div>
   <span class="streak" id="streak" hidden></span>
   <nav aria-label="Sections">
+    <a href="#home" data-view="home"><span class="ic">首</span>Home</a>
     <a href="#cards" data-view="cards"><span class="ic">卡</span>Cards</a>
     <a href="#test" data-view="test"><span class="ic">考</span>Test</a>
     <a href="#listen" data-view="listen"><span class="ic">听</span>Listen</a>
     <a href="#chars" data-view="chars"><span class="ic">字</span>Characters</a>
-    <a href="#progress" data-view="progress"><span class="ic">进</span>Progress</a>
   </nav>
 </header>
 
+<div id="deckbar">
 <div class="label">Decks</div>
 <div class="deckscroll" id="deckscroll">
   <button class="deckarrow l" id="deckL" aria-label="Scroll decks left">‹</button>
   <div class="decks" id="decks"></div>
   <button class="deckarrow r" id="deckR" aria-label="Scroll decks right">›</button>
+</div>
 </div>
 
 <!-- FLASHCARDS -->
@@ -182,20 +184,49 @@
   <div class="chargrid" id="chargrid"></div>
 </section>
 
-<!-- PROGRESS -->
-<section id="v-progress" hidden>
+<!-- HOME -->
+<section id="v-home" hidden>
+  <div class="hello"><div class="label" id="hDate"></div><h2 id="hGreet">Welcome back</h2></div>
+  <div class="tiles">
+    <div class="tile"><div class="label">Day streak</div><div class="big" id="tStreak">0</div><small id="tStreakSub"></small></div>
+    <div class="tile"><div class="label">Words mastered</div><div class="big" id="tWords">0</div><small id="tWordsSub"></small></div>
+    <div class="tile"><div class="label">Characters</div><div class="big" id="tChars">0</div><small id="tCharsSub"></small></div>
+    <div class="tile"><div class="label">Test average</div><div class="big" id="tTest">–</div><small id="tTestSub"></small></div>
+  </div>
+
   <div class="panel">
-    <div class="row spread" style="margin-bottom:12px"><div class="legend"><span><i style="background:var(--jade)"></i>Mastered (3+ correct in a row)</span><span><i style="background:var(--gold)"></i>Learning</span><span><i style="background:var(--line)"></i>New</span></div>
-    <button class="ghost" id="reset">Reset progress</button></div>
+    <div class="row spread"><b>This week</b><span class="note" style="margin:0" id="weekSum"></span></div>
+    <div class="week" id="week" role="img"></div>
+  </div>
+
+  <div class="label" style="margin:18px 0 8px">Jump back in</div>
+  <div class="quick">
+    <a href="#cards" id="qWeak"><span class="qi">卡</span><b>Review weak cards</b><small id="qWeakSub"></small></a>
+    <a href="#test"><span class="qi">考</span><b>Take a test</b><small id="qTestSub"></small></a>
+    <a href="#listen"><span class="qi">听</span><b>Audio lesson</b><small>Hands-free listening</small></a>
+    <a href="#chars"><span class="qi">字</span><b>Practice characters</b><small id="qCharSub"></small></a>
+  </div>
+
+  <div class="panel" style="margin-top:18px">
+    <div class="row spread" style="margin-bottom:12px"><b>Decks</b><div class="legend"><span><i style="background:var(--jade)"></i>Mastered</span><span><i style="background:var(--gold)"></i>Learning</span><span><i style="background:var(--line)"></i>New</span></div></div>
     <div class="deckrows" id="deckrows"></div>
-    <p id="resetConfirm" hidden style="margin:12px 0 0;font-size:13.5px">Clear all card progress and test scores? <button class="btn again" id="resetYes" style="padding:6px 12px">Clear</button> <button class="ghost" id="resetNo">Cancel</button></p>
+    <details class="allwords"><summary>See every word</summary><div class="wordgrid" id="wordgrid"></div></details>
+  </div>
+
+  <div class="panel" style="margin-top:18px">
+    <b>Your data</b>
+    <p class="note" id="syncNote" style="margin-top:4px">Progress is saved on this device. Use a backup file to move it between your computer and iPhone.</p>
     <div class="toolrow">
       <button class="btn" id="exportBtn">Back up progress</button>
       <label class="btn" style="cursor:pointer">Restore backup<input type="file" id="importFile" accept="application/json,.json" hidden></label>
+      <button class="btn again" id="reset">Reset progress</button>
     </div>
-    <p class="note" id="syncNote">Progress is saved on this device. Use a backup file to move it between your computer and iPhone.</p>
+    <div class="resetbox" id="resetConfirm" hidden>
+      <b>Start over?</b>
+      <p>This clears every card and character score, your test history and your streak on this device. It can't be undone, so back up first if you might want it later.</p>
+      <div class="row"><button class="btn again" id="resetYes">Yes, reset everything</button><button class="btn" id="resetBackup">Back up first</button><button class="ghost" id="resetNo">Cancel</button></div>
+    </div>
   </div>
-  <div class="wordgrid" id="wordgrid"></div>
 </section>
 </div>
 

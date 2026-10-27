@@ -1,6 +1,6 @@
 /* ---------- storage ---------- */
 const KEY="hanzi-practice-v1";
-let S={sel:["words"],box:{},cbox:{},hist:[],days:[],front:"han",order:"weak",hk:true,autoSay:false,corder:"weak"};
+let S={sel:["words"],box:{},cbox:{},hist:[],days:[],log:{},front:"han",order:"weak",hk:true,autoSay:false,corder:"weak"};
 try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 const box=c=>S.box[c.id]||0;
@@ -20,7 +20,9 @@ function streak(){const set=new Set(S.days);let n=0;const d=new Date();
   for(;;){const k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");if(!set.has(k))break;n++;d.setDate(d.getDate()-1)}
   return n}
 function renderStreak(){const n=streak();$("streak").hidden=n<1;$("streak").textContent=`${n}-day streak`}
-function gradeCard(c,ok){S.box[c.id]=ok?Math.min(box(c)+1,5):0;markDay();save()}
+// Counts study actions per day for the weekly activity chart.
+function bump(n=1){const t=today();S.log[t]=(S.log[t]||0)+n;markDay()}
+function gradeCard(c,ok){S.box[c.id]=ok?Math.min(box(c)+1,5):0;bump();save()}
 
 /* ---------- speech ---------- */
 let zhVoice=null,enVoice=null;
@@ -50,7 +52,7 @@ function renderDecks(){
 }
 $("decks").addEventListener("click",e=>{const b=e.target.closest("[data-deck]");if(!b)return;const k=b.dataset.deck;
   if(S.sel.includes(k)){if(S.sel.length>1)S.sel=S.sel.filter(x=>x!==k)}else S.sel.push(k);
-  save();renderDecks();buildQueue();buildChars();renderProgress()});
+  save();renderDecks();buildQueue();buildChars()});
 function deckEdges(){const d=$("decks"),w=$("deckscroll");
   w.classList.toggle("more-l",d.scrollLeft>2);w.classList.toggle("more-r",d.scrollLeft+d.clientWidth<d.scrollWidth-2)}
 $("decks").addEventListener("scroll",deckEdges,{passive:true});
@@ -275,7 +277,7 @@ async function runLesson(){
       else await sleep(st.ms);
       if(!L||tok!==L.tok)return;
     }
-    L.seen.add(c.id);L.i++;L.s=0;
+    L.seen.add(c.id);bump();save();L.i++;L.s=0;
   }
   lessonDone();
 }
@@ -357,7 +359,7 @@ function mountWriter(ch){
     onCorrectStroke:s=>{$("wstatus").className="wstatus";$("wstatus").textContent=`${s.strokeNum+1} of ${s.strokeNum+1+s.strokesRemaining} strokes`},
     onComplete:s=>{const ok=s.totalMistakes<=(wmode==="trace"?2:1);
       if(wmode==="recall"){S.cbox[ch]=ok?Math.min(cbox(ch)+1,5):0}else if(ok&&cbox(ch)<1)S.cbox[ch]=1;
-      markDay();save();renderCharGrid();
+      bump();save();renderCharGrid();
       $("wstatus").className="wstatus "+(ok?"ok":"no");
       $("wstatus").textContent=ok?`Nice. ${s.totalMistakes} mistake${s.totalMistakes===1?"":"s"}.`:`Done with ${s.totalMistakes} mistakes. Try it again.`}});
 }
@@ -372,19 +374,48 @@ $("cnext").onclick=()=>{ci=(ci+1)%CH.length;showChar()};
 $("corder").value=S.corder;
 $("corder").onchange=e=>{S.corder=e.target.value;save();ci=0;buildChars()};
 
-/* ---------- progress ---------- */
-function renderProgress(){
+/* ---------- home dashboard ---------- */
+const dayKey=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+function bestStreak(){const ds=[...new Set(S.days)].sort();let best=0,run=0,prev=null;
+  ds.forEach(k=>{const d=new Date(k+"T12:00");run=prev&&(d-prev)/864e5<1.5?run+1:1;best=Math.max(best,run);prev=d});return best}
+function renderHome(){
+  const now=new Date(),h=now.getHours();
+  $("hDate").textContent=now.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+  $("hGreet").textContent=(h<12?"Good morning":h<18?"Good afternoon":"Good evening")+" · 加油！";
+  const st=streak();$("tStreak").textContent=st;
+  $("tStreakSub").textContent=S.days.includes(today())?`Studied today · best ${bestStreak()}`:st?"Study today to keep it going":"Study today to start one";
+  const m=D.filter(c=>box(c)>=3).length,l=D.filter(c=>box(c)>0&&box(c)<3).length;
+  $("tWords").textContent=m;$("tWordsSub").textContent=`of ${D.length} · ${l} learning`;
+  const all=[...new Set(D.flatMap(c=>hanChars(c.hz)))],cm=all.filter(ch=>cbox(ch)>=3).length,cw=all.filter(ch=>cbox(ch)>0).length;
+  $("tChars").textContent=cm;$("tCharsSub").textContent=`mastered of ${all.length} · ${cw} written`;
+  const last=S.hist.slice(-5);
+  $("tTest").textContent=last.length?Math.round(last.reduce((a,x)=>a+(x.n?x.score/x.n:0),0)/last.length*100)+"%":"–";
+  $("tTestSub").textContent=last.length?`last ${last.length} test${last.length>1?"s":""} · ${S.hist.length} total`:"No tests yet";
+  // Activity: the last 7 days, one sequential hue, value label on today only; the rest show on hover.
+  const days=[...Array(7)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);const k=dayKey(d);return{k,d,n:S.log[k]||0,studied:S.days.includes(k)}});
+  const max=Math.max(5,...days.map(x=>x.n)),tot=days.reduce((a,x)=>a+x.n,0);
+  $("weekSum").textContent=`${tot} review${tot===1?"":"s"} · ${days.filter(x=>x.n||x.studied).length} of 7 days`;
+  $("week").setAttribute("aria-label","Reviews per day this week: "+days.map(x=>`${x.d.toLocaleDateString(undefined,{weekday:"short"})} ${x.n}`).join(", "));
+  $("week").innerHTML=days.map((x,i)=>{const isT=i===6,wd=x.d.toLocaleDateString(undefined,{weekday:"short"});
+    return `<div class="wk${isT?" today":""}" tabindex="0"><div class="col">${isT&&x.n?`<span class="v">${x.n}</span>`:""}<div class="b${x.n?"":" zero"}" style="height:${x.n/max*100}%"></div></div><span class="d">${isT?"Today":wd}</span>
+      <span class="tip">${x.d.toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"})} · ${x.n} review${x.n===1?"":"s"}</span></div>`}).join("");
+  const weak=pool().filter(c=>box(c)<3).length;
+  $("qWeakSub").textContent=weak?`${weak} not yet mastered in your decks`:"Everything in your decks is mastered";
+  $("qTestSub").textContent=S.hist.length?`Last: ${S.hist[S.hist.length-1].score}/${S.hist[S.hist.length-1].n}`:"Check what's sticking";
+  $("qCharSub").textContent=`${all.length-cw} you haven't written yet`;
   const rows=Object.entries(DECKS).map(([k,v])=>{const cs=D.filter(c=>c.deck===k);
     return [v,cs.length,cs.filter(c=>box(c)>=3).length,cs.filter(c=>box(c)>0&&box(c)<3).length]});
-  const all=[...new Set(D.flatMap(c=>hanChars(c.hz)))];
-  rows.push(["Characters written",all.length,all.filter(ch=>cbox(ch)>=3).length,all.filter(ch=>cbox(ch)>0&&cbox(ch)<3).length]);
-  $("deckrows").innerHTML=rows.map(([v,n,m,l])=>`<div class="deckrow"><b>${v}</b><div class="bar"><i style="width:${m/n*100}%"></i><i style="width:${l/n*100}%"></i></div><span style="font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px">${m}/${n}</span></div>`).join("");
-  $("wordgrid").innerHTML=pool().map(c=>{const b=box(c);const cls=b>=3?"s2":b>0?"s1":"s0";
+  rows.push(["Characters written",all.length,cm,all.filter(ch=>cbox(ch)>0&&cbox(ch)<3).length]);
+  $("deckrows").innerHTML=rows.map(([v,n,m,l])=>`<div class="deckrow"><b>${v}</b><div class="bar" title="${m} mastered · ${l} learning · ${n-m-l} new"><i style="width:${m/n*100}%"></i><i style="width:${l/n*100}%"></i></div><span style="font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px">${m}/${n}</span></div>`).join("");
+  $("wordgrid").innerHTML=D.map(c=>{const b=box(c);const cls=b>=3?"s2":b>0?"s1":"s0";
     return `<div class="wg ${cls}" title="${esc(c.py)} · ${esc(c.en)}"><div class="h">${esc(c.hz.length>5?c.hz.slice(0,5)+"…":c.hz)}</div><small>${esc(c.en)}</small></div>`}).join("");
 }
-$("reset").onclick=()=>$("resetConfirm").hidden=false;
+$("qWeak").onclick=()=>{S.order="weak";$("order").value="weak";save();buildQueue()};
+$("reset").onclick=()=>{$("resetConfirm").hidden=false;$("resetConfirm").scrollIntoView({behavior:"smooth",block:"nearest"})};
 $("resetNo").onclick=()=>$("resetConfirm").hidden=true;
-$("resetYes").onclick=()=>{S.box={};S.cbox={};S.hist=[];S.days=[];save();$("resetConfirm").hidden=true;renderProgress();renderHist();renderStreak();buildQueue();buildChars()};
+$("resetBackup").onclick=()=>$("exportBtn").click();
+$("resetYes").onclick=()=>{S.box={};S.cbox={};S.hist=[];S.days=[];S.log={};save();$("resetConfirm").hidden=true;
+  $("syncNote").textContent="Progress reset. Everything starts fresh.";renderHome();renderHist();renderStreak();buildQueue();buildChars()};
 $("exportBtn").onclick=()=>{
   const blob=new Blob([JSON.stringify({app:"hanzi-practice",v:1,saved:new Date().toISOString(),data:S})],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`hanzi-progress-${today()}.json`;
@@ -396,21 +427,22 @@ $("importFile").onchange=e=>{const f=e.target.files[0];if(!f)return;const rd=new
     for(const[k,v]of Object.entries(o.box))S.box[k]=Math.max(S.box[k]||0,+v||0);
     for(const[k,v]of Object.entries(o.cbox||{}))S.cbox[k]=Math.max(S.cbox[k]||0,+v||0);
     S.days=[...new Set([...S.days,...(o.days||[])])].sort().slice(-400);
+    for(const[k,v]of Object.entries(o.log||{}))S.log[k]=Math.max(S.log[k]||0,+v||0);
     const hk=h=>h.d+"|"+h.score+"|"+h.n;const seenH=new Set(S.hist.map(hk));
     (o.hist||[]).forEach(h=>{if(!seenH.has(hk(h)))S.hist.push(h)});S.hist=S.hist.slice(-30);
-    save();renderProgress();renderHist();renderStreak();buildQueue();buildChars();
+    save();renderHome();renderHist();renderStreak();buildQueue();buildChars();
     $("syncNote").textContent="Backup restored and merged with this device's progress.";
   }catch(err){$("syncNote").textContent="That file isn't a Hanzi Practice backup."}e.target.value=""};
   rd.readAsText(f)};
 
 /* ---------- routing ---------- */
-const VIEWS=["cards","test","listen","chars","progress"];
-let view="cards";
-function route(){const prev=view;view=VIEWS.includes(location.hash.slice(1))?location.hash.slice(1):"cards";
-  VIEWS.forEach(v=>$("v-"+v).hidden=v!==view);
+const VIEWS=["home","cards","test","listen","chars"];
+let view="home";
+function route(){const prev=view;view=VIEWS.includes(location.hash.slice(1))?location.hash.slice(1):"home";
+  VIEWS.forEach(v=>$("v-"+v).hidden=v!==view);$("deckbar").hidden=view==="home";
   document.querySelectorAll("nav a").forEach(a=>a.setAttribute("aria-current",a.dataset.view===view?"page":"false"));
   if(prev==="listen"&&view!=="listen")pauseLesson();
-  if(view==="progress")renderProgress();if(view==="test")renderHist();if(view==="chars")showChar();if(view==="cards")fitCard()}
+  if(view==="home")renderHome();if(view==="test")renderHist();if(view==="chars")showChar();if(view==="cards")fitCard()}
 addEventListener("hashchange",route);
 document.addEventListener("visibilitychange",()=>{if(document.hidden)pauseLesson()});
 
