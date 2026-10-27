@@ -61,11 +61,15 @@ button.ghost:hover{color:var(--ink)}
 .stage{perspective:1400px;margin:12px 0}
 .card{position:relative;height:340px;cursor:pointer;transform-style:preserve-3d;transition:transform .45s cubic-bezier(.3,.7,.3,1)}
 .card.flipped{transform:rotateY(180deg)}
-.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;gap:6px;overflow:hidden}
+/* Padding clears the corner label (top), the hint and speaker button (bottom); content never touches the edges. */
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;padding:44px 28px 60px;text-align:center;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
+.fc{margin:auto 0;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;width:100%}
+.fc>*{max-width:100%;overflow-wrap:anywhere}
 .face.back{transform:rotateY(180deg)}
 .face .corner{position:absolute;top:14px;left:16px;right:16px;display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
 .han{font-family:var(--f-han);font-weight:500;line-height:1.15;font-size:clamp(44px,13vw,96px);word-break:keep-all}
 .han.long{font-size:clamp(28px,7vw,46px)}
+.han.xlong{font-size:clamp(24px,5.5vw,34px);line-height:1.3}
 .py{color:var(--jade);font-size:clamp(20px,4.5vw,28px);font-weight:500}
 .en{font-family:var(--f-display);font-size:clamp(22px,5vw,34px);font-weight:600;letter-spacing:-.01em}
 .hk{color:var(--gold);font-size:13.5px;background:var(--gold-soft);padding:2px 10px;border-radius:999px}
@@ -74,7 +78,7 @@ button.ghost:hover{color:var(--ink)}
 .ex .p{color:var(--jade);font-size:14px}
 .ex .e{color:var(--muted);font-size:13.5px;font-style:italic}
 .exsay{font:inherit;font-size:12.5px;color:var(--jade);background:var(--jade-soft);border:none;border-radius:999px;padding:3px 10px;margin:4px 0 2px;cursor:pointer}
-.hint{color:var(--muted);font-size:12.5px;position:absolute;bottom:14px}
+.hint{color:var(--muted);font-size:12.5px;position:absolute;bottom:20px;left:56px;right:56px}
 .speak{position:absolute;bottom:12px;right:12px;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--jade);cursor:pointer;display:grid;place-items:center}
 .ctrl{display:grid;grid-template-columns:auto 1fr 1fr auto;gap:8px;align-items:center}
 .ctrl .btn{padding:12px}
@@ -130,6 +134,7 @@ button.ghost:hover{color:var(--ink)}
   .deckrow{grid-template-columns:1fr auto}
   .deckrow .bar{grid-column:1/-1;order:3}
   .card{height:320px}
+  .face{padding:42px 18px 58px}
 }
 @media (prefers-reduced-motion:reduce){.card{transition:none}}
 

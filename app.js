@@ -70,7 +70,7 @@ function buildQueue(){
   Q=p;qi=0;showCard();
 }
 function boxes(c){return `<span class="boxes" title="Correct in a row">${[0,1,2].map(i=>`<span class="${box(c)>i?"on":""}"></span>`).join("")}</span>`}
-function hanHtml(c){return `<div class="han${c.hz.length>4?" long":""}">${esc(c.hz)}</div>`}
+function hanHtml(c){return `<div class="han${c.hz.length>10?" long xlong":c.hz.length>4?" long":""}">${esc(c.hz)}</div>`}
 function showCard(){
   const card=$("card");card.classList.remove("flipped");
   const c=Q[qi];if(!c)return;
@@ -81,17 +81,26 @@ function showCard(){
   const ex=c.ex?`<div class="ex"><div class="h">${esc(c.ex[0])}</div>${exSp}<div class="p">${esc(c.ex[1])}</div><div class="e">${esc(c.ex[2])}</div></div>`:"";
   const trd=c.tr?`<div class="hk" style="background:none;padding:0;color:var(--muted)">Traditional · <span style="font-family:var(--f-han)">${esc(c.tr)}</span></div>`:"";
   const full=`${hanHtml(c)}${trd}<div class="py">${esc(c.py)}</div><div class="en">${esc(c.en)}</div>${hk}${ex}`;
-  let front;
-  if(S.front==="en")front=`<div class="en">${esc(c.en)}</div><div class="hint">Tap to see the Chinese</div>`;
-  else if(S.front==="hanonly")front=`${hanHtml(c)}<div class="hint">Say it out loud, then tap</div>`;
-  else front=`${hanHtml(c)}<div class="py">${esc(c.py)}</div><div class="hint">Tap to see the meaning</div>`;
-  $("ff").innerHTML=corner+front+(S.front==="en"?"":sp);
-  $("fb").innerHTML=corner+full+sp;
+  let front,hint;
+  if(S.front==="en"){front=`<div class="en">${esc(c.en)}</div>`;hint="Tap to see the Chinese"}
+  else if(S.front==="hanonly"){front=hanHtml(c);hint="Say it out loud, then tap"}
+  else{front=`${hanHtml(c)}<div class="py">${esc(c.py)}</div>`;hint="Tap to see the meaning"}
+  $("ff").innerHTML=`${corner}<div class="fc">${front}</div><div class="hint">${hint}</div>${S.front==="en"?"":sp}`;
+  $("fb").innerHTML=`${corner}<div class="fc">${full}</div>${sp}`;
+  fitCard();
   const m=Q.filter(x=>box(x)>=3).length;
   $("pos").textContent=`Card ${qi+1} of ${Q.length} · ${m} mastered`;
   $("pbar").style.width=(Q.length?m/Q.length*100:0)+"%";
   if(S.autoSay&&view==="cards"&&S.front!=="en")say(c.hz);
 }
+// Grow the card so the busier face fits inside its padding; past the cap the face scrolls instead of clipping.
+function fitCard(){const card=$("card");card.style.height="";
+  const min=parseFloat(getComputedStyle(card).height),cap=Math.max(min,innerHeight*.7);
+  const need=Math.max(...[$("ff"),$("fb")].map(f=>{const cs=getComputedStyle(f);
+    return f.querySelector(".fc").scrollHeight+parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom)+2}));
+  if(need>min)card.style.height=Math.min(need,cap)+"px"}
+addEventListener("resize",()=>{if(view==="cards")fitCard()});
+if(document.fonts)document.fonts.ready.then(()=>{if(view==="cards")fitCard()});
 function flip(){const card=$("card");card.classList.toggle("flipped");
   if(S.autoSay&&S.front==="en"&&card.classList.contains("flipped")&&Q[qi])say(Q[qi].hz)}
 function move(d){qi=(qi+d+Q.length)%Q.length;showCard()}
@@ -401,7 +410,7 @@ function route(){const prev=view;view=VIEWS.includes(location.hash.slice(1))?loc
   VIEWS.forEach(v=>$("v-"+v).hidden=v!==view);
   document.querySelectorAll("nav a").forEach(a=>a.setAttribute("aria-current",a.dataset.view===view?"page":"false"));
   if(prev==="listen"&&view!=="listen")pauseLesson();
-  if(view==="progress")renderProgress();if(view==="test")renderHist();if(view==="chars")showChar()}
+  if(view==="progress")renderProgress();if(view==="test")renderHist();if(view==="chars")showChar();if(view==="cards")fitCard()}
 addEventListener("hashchange",route);
 document.addEventListener("visibilitychange",()=>{if(document.hidden)pauseLesson()});
 
