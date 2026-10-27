@@ -164,7 +164,7 @@ function renderHist(){$("hist").innerHTML=S.hist.length?S.hist.slice(-8).reverse
 function distract(c,n,key){const same=pool().filter(x=>x.id!==c.id&&x[key]!==c[key]);
   const close=same.filter(x=>x.deck===c.deck);return shuffle(close.length>=n?close:same).slice(0,n)}
 function makeQ(c,type){
-  if(type==="pinyin"){const tv=toneVariants(c.py,2);const others=distract(c,3,"py").map(x=>x.py);
+  if(type==="pinyin"||type==="enpy"){const tv=toneVariants(c.py,2);const others=distract(c,3,"py").map(x=>x.py);
     const opts=shuffle([c.py,...shuffle([...tv,...others]).filter(x=>x!==c.py).slice(0,3)]);return{c,type,opts,ans:c.py}}
   if(type==="reverse"){const opts=shuffle([c,...distract(c,3,"hz")]).map(x=>x.hz);return{c,type,opts,ans:c.hz}}
   if(type==="listen"){const opts=shuffle([c,...distract(c,3,"hz")]).map(x=>x.hz);return{c,type,opts,ans:c.hz}}
@@ -192,6 +192,7 @@ function askQ(){
   if(q.type==="meaning"){qh=`<div class="ask">What does this mean?</div>${hanHtml(c)}<div class="py" id="pyHint" hidden>${esc(c.py)}</div><button class="ghost" id="showPy">Show pinyin</button>`;ah=opts(q,"")}
   if(q.type==="pymean"){qh=`<div class="ask">Read the pinyin. What does it mean?</div><div class="py pybig">${esc(c.py)}</div>${canSpeak()?`<button class="ghost" data-say="${esc(c.hz)}">🔊 Hear it</button>`:""}`;ah=opts(q,"")}
   if(q.type==="reverse"){qh=`<div class="ask">Which is the Chinese for…</div><div class="en">${esc(c.en)}</div>`;ah=opts(q,"hanopt")}
+  if(q.type==="enpy"){qh=`<div class="ask">How do you say this in Mandarin? Watch the tones.</div><div class="en">${esc(c.en)}</div>`;ah=opts(q,"pyopt")}
   if(q.type==="pinyin"){qh=`<div class="ask">How do you say it? Watch the tones.</div>${hanHtml(c)}<div class="ask">${esc(c.en)}</div>`;ah=opts(q,"pyopt")}
   if(q.type==="listen"){qh=`<div class="ask">Listen and pick the word</div><button class="btn primary" data-say="${esc(c.hz)}">🔊 Play again</button>`;ah=opts(q,"hanopt");setTimeout(()=>say(c.hz),250)}
   if(q.type==="type"){qh=`<div class="ask">Type the pinyin. Tone marks or numbers both work (ni3 hao3).</div>${hanHtml(c)}<div class="ask">${esc(c.en)}</div>`;

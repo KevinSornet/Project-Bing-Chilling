@@ -1,5 +1,5 @@
 // Bump VERSION whenever app files change so phones pick up the new copy.
-const VERSION="hanzi-v5";
+const VERSION="hanzi-v6";
 const SHELL=["./","index.html","app.css","app.js","data.js","manifest.webmanifest","icons/icon-192.png","icons/apple-touch-icon.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(VERSION).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==VERSION).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
