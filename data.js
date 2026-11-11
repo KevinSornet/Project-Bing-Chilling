@@ -1,4 +1,4 @@
-const DECKS={num:"Numbers",cal:"Days & Months",time:"Time Words",words:"Essential Words",sent:"Sentences",more:"Phrases 2",everyday:"Everyday Phrases"};
+const DECKS={num:"Numbers",cal:"Days & Months",time:"Time Words",words:"Essential Words",sent:"Sentences",more:"Phrases 2",everyday:"Everyday Phrases",ask:"Questions"};
 const D=[];
 function add(deck,hz,py,en,hk,ex){D.push({id:deck+":"+hz,deck,hz,py,en,hk,ex})}
 [["零","líng","0 · zero","Khong4"],["一","yī","1 · one","Tsit4 / Eit4"],["二","èr","2 · two","Nheng1N / Di4"],["三","sān","3 · three","Sah1N"],["四","sì","4 · four","Si4"],["五","wǔ","5 · five","Goh1N"],["六","liù","6 · six","Lak4"],["七","qī","7 · seven","Chit4"],["八","bā","8 · eight","Pue4"],["九","jiǔ","9 · nine","Kaw1"],["十","shí","10 · ten","Tsap4"],["十一","shíyī","11","Tsap4 It4"],["十二","shí'èr","12","Tsap4 Di4"],["十三","shísān","13","Tsap4 Sah1N"],["十四","shísì","14","Tsap4 Si4"],["十五","shíwǔ","15","Tsap4 Go1N"],["十六","shíliù","16","Tsap4 Lak4"],["十七","shíqī","17","Tsap4 Chit4"],["十八","shíbā","18","Tsap4 Pue4"],["十九","shíjiǔ","19","Tsap4 Kaw1"],["二十","èrshí","20",""],["二十一","èrshíyī","21","Di3 Tsap4 It4"]].forEach(r=>add("num",...r));
@@ -42,8 +42,35 @@ W.forEach(([hz,py,en,hk,ex])=>{add("words",hz,py,en,hk,ex);
 [["没问题","méi wèntí","no problem","沒問題"],["再来一次","zài lái yī cì","one more time","再來一次"],["我们家有五个人。","Wǒmen jiā yǒu wǔ gè rén.","There are five people in our family.","我們家有五個人。"],["多少","duōshao","how many, how much",""],["一个人","yī gè rén","one person","一個人"],["我有一个姐姐","Wǒ yǒu yī gè jiějie","I have one older sister.","我有一個姐姐"],["房间","fángjiān","room","房間"],["这个","zhège","this one","這個"],["飞机","fēijī","airplane","飛機"],["飞机票","fēijīpiào","plane ticket","飛機票"],["电影","diànyǐng","movie","電影"],["看电影","kàn diànyǐng","to watch a movie","看電影"],["粥","zhōu","congee",""],["你的生日是什么时候？","Nǐ de shēngrì shì shénme shíhou?","When is your birthday?","你的生日是什麼時候？"]].forEach(([hz,py,en,tr])=>{add("more",hz,py,en,"",null);if(tr)D[D.length-1].tr=tr});
 [["你好","nǐ hǎo","hello","Di1 Ho1",""],["早上好","zǎoshang hǎo","good morning","Ho2 Tsa2 Khi1",""],["早安","zǎo'ān","good morning (short)","Ho2 Tsa2 Khi1",""],["下午好","xiàwǔ hǎo","good afternoon","Ho2 Eh2 Po1N",""],["晚上好","wǎnshang hǎo","good evening","Ho2 Am1 Mih2",""],["晚安","wǎn'ān","good night","Wan2 An1N",""],["你叫什么名字？","Nǐ jiào shénme míngzi?","What's your name?","Di1 Kio1 Sia2mi4 Miah2?","你叫什麼名字？"],["我叫…","Wǒ jiào…","My name is…","Gua1 Kio1…",""],["谢谢","xièxie","thank you","Toh1 Sia4","謝謝"],["不客气","bú kèqi","you're welcome","Bo3 Khe4 Khi4","不客氣"],["喜欢","xǐhuan","to like","Ka4 E4","喜歡"],["再见","zàijiàn","goodbye","Tsay1 Ki4 / Bye","再見"],["请","qǐng","please","Tsia2","請"],["请进","qǐng jìn","please come in","Tsia2 Dip4 Lai4","請進"],["太好了！","Tài hǎo le!","Great!","Tai1 Ho1 Lo4",""],["你做得到！","Nǐ zuò de dào!","You can do it!","Di1 E3 Tsue4 Kaw4",""],["别放弃！","Bié fàngqì!","Don't give up!","Mang1 Hong1 Khi4","別放棄！"],["我爱你。","Wǒ ài nǐ.","I love you.","Gua1 Ai4 Di3","我愛你。"]].forEach(([hz,py,en,hk,tr])=>{add("everyday",hz,py,en,hk,null);if(tr)D[D.length-1].tr=tr});
 
+/* Question words, each with its example sentence; the sentences are cards too */
+const QW=[
+["什么","shénme","what?","Sia2 Mi4",["这是什么？","Zhè shì shénme?","What is this?","Tsit4 Ge1 Si3 Sia2 Mi4?"]],
+["谁","shéi","who?","Sia3 Nga2",["他是谁？","Tā shì shéi?","Who is he?","E1 Si3 Sia3 Nga2?"]],
+["哪个","nǎge","which?","To2 Tsit4 Ge2",["你喜欢哪个钱包？","Nǐ xǐhuan nǎge qiánbāo?","Which wallet do you like?","Di1 Ai1 To2 Tsit4 Ge2 Phe3 Pao1?"]],
+["为什么","wèishénme","why?","Kan4 Na3",["你为什么迟到了？","Nǐ wèishénme chídào le?","Why are you late?","Di1 Kan4 Na3 Wa1 Kaw4?"]],
+["什么时候","shénme shíhou","when?","Sia2 Mi4 Si3 Tsun4 / Ti3 Si2",["你什么时候到的？","Nǐ shénme shíhou dào de?","When did you arrive?","Di1 Sia2 Mi4 Si3 Tsun4 Kaw4? / Di1 Ti2 Si3 Kaw4?"]],
+["怎么","zěnme","how?","Tsu1 Wah1",["你每天怎么去上班？","Nǐ měitiān zěnme qù shàngbān?","How do you get to work every day?","Di1 Tak4 Dit4 Tsu1 Ah1 Khi1 Tsue1 Kang1?"]],
+["多少","duōshǎo","how many? how much?","Dua3 Tsue4 / Dua3 Tsi2",["你有多少本书？","Nǐ yǒu duōshǎo běn shū?","How many books do you have?","Di1 Uh3 Dua3 Tsue3 Pun2 Tse4?"]],
+["多少钱","duōshǎo qián","how much money?","Dua3 Tsi2",["一共多少钱？","Yígòng duōshǎo qián?","How much is it in total?","Long2 Tsong4 Dua3 Tsue4 Tsi2?"]],
+["谁的","shéi de","whose?","Sia3 Nga2 Eh3",["这是谁的手机？","Zhè shì shéi de shǒujī?","Whose phone is this?","Tse2 Si3 Sia3 Nga2 Eh3 Chiu2 Ki1?"]],
+["几点","jǐ diǎn","what time?","Kui2 Tiam1",["现在几点了？","Xiànzài jǐ diǎn le?","What time is it now?","Tse2 Tsun4 Kui2 Tiam1?"]],
+["多长时间","duō cháng shíjiān","how long? (time)","Dua3 Ku1",["路上需要多长时间？","Lùshang xūyào duō cháng shíjiān?","How long will it take to get there?","Lo3 Ting1 Su1 Yaw1 Dua3 Theng2 Eh3 Si3 Kan1?"]],
+["多远","duō yuǎn","how far?","Dua3 Heng1",["从这里到机场有多远？","Cóng zhèlǐ dào jīchǎng yǒu duō yuǎn?","How far is it from here to the airport?","Tui1 Jia2 Kaw1 Hui1 Ki1 Tiu2 Dua3 Heng1?"]]];
+QW.forEach(([hz,py,en,hk,ex])=>add("ask",hz,py,en,hk,ex.slice(0,3)));
+QW.forEach(([,,,,[hz,py,en,hk]])=>add("ask",hz,py,en,hk,null));
+
 /* Memory hooks for individual characters: [components, story] */
 const MN={
+"谁":["讠 + 隹","Words 讠 called out to a bird 隹: who's there?"],"哪":["口 + 那","A mouth 口 asking about that 那: which one?"],
+"为":["four strokes","A hand at work: for, because of. 为什么 = for what? Why?"],"怎":["乍 + 心","A sudden 乍 feeling in the heart 心: how?"],
+"几":["two strokes","A small table: how many (a few)? 几点 = how many dots on the clock?"],"点":["占 + 灬","Fire dots 灬 under a mark: dot, o'clock."],
+"远":["辶 + 元","Walking 辶 a long way: far."],"长":["four strokes","Long flowing hair: long."],"钱":["钅 + 戋","Metal 钅 cut into pieces: money."],
+"包":["勹 + 巳","Something wrapped 勹 up: bag, wrap."],"迟":["辶 + 尺","Walking 辶 slowly, one foot 尺 at a time: late."],
+"到":["至 + 刂","Reaching 至 the place: arrive."],"书":["four strokes","A brush writing a scroll: book."],"本":["木 + 一","A mark at the root of a tree 木: root, the counter for books."],
+"班":["王 + 刂 + 王","A knife 刂 sharing jade 王 between two: shift, class. 上班 = go to work."],
+"路":["足 + 各","Each 各 foot 足 on it: road."],"要":["覀 + 女","Want, need."],"需":["雨 + 而","Waiting for rain 雨: need."],
+"从":["人 + 人","One person following another: from."],"场":["土 + 昜","Open ground 土 in the sun: field, place. 机场 = airport."],
+"共":["two hands holding","Many hands together: total, shared. 一共 = altogether."],"的":["白 + 勺","Possessive: 我的 = mine."],"了":["two strokes","A finished action: done."],
 "一":["one stroke","One line = one."],"二":["two strokes","Two lines = two."],"三":["three strokes","Three lines = three."],
 "四":["囗 + 儿","A room 囗 with two legs inside: four walls of a room."],
 "五":["二 + crossed stroke","A tangled cross between two lines: count five fingers."],
