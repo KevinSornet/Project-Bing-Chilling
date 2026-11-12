@@ -42,7 +42,7 @@ W.forEach(([hz,py,en,hk,ex])=>{add("words",hz,py,en,hk,ex);
 [["没问题","méi wèntí","no problem","沒問題"],["再来一次","zài lái yī cì","one more time","再來一次"],["我们家有五个人。","Wǒmen jiā yǒu wǔ gè rén.","There are five people in our family.","我們家有五個人。"],["多少","duōshao","how many, how much",""],["一个人","yī gè rén","one person","一個人"],["我有一个姐姐","Wǒ yǒu yī gè jiějie","I have one older sister.","我有一個姐姐"],["房间","fángjiān","room","房間"],["这个","zhège","this one","這個"],["飞机","fēijī","airplane","飛機"],["飞机票","fēijīpiào","plane ticket","飛機票"],["电影","diànyǐng","movie","電影"],["看电影","kàn diànyǐng","to watch a movie","看電影"],["粥","zhōu","congee",""],["你的生日是什么时候？","Nǐ de shēngrì shì shénme shíhou?","When is your birthday?","你的生日是什麼時候？"]].forEach(([hz,py,en,tr])=>{add("more",hz,py,en,"",null);if(tr)D[D.length-1].tr=tr});
 [["你好","nǐ hǎo","hello","Di1 Ho1",""],["早上好","zǎoshang hǎo","good morning","Ho2 Tsa2 Khi1",""],["早安","zǎo'ān","good morning (short)","Ho2 Tsa2 Khi1",""],["下午好","xiàwǔ hǎo","good afternoon","Ho2 Eh2 Po1N",""],["晚上好","wǎnshang hǎo","good evening","Ho2 Am1 Mih2",""],["晚安","wǎn'ān","good night","Wan2 An1N",""],["你叫什么名字？","Nǐ jiào shénme míngzi?","What's your name?","Di1 Kio1 Sia2mi4 Miah2?","你叫什麼名字？"],["我叫…","Wǒ jiào…","My name is…","Gua1 Kio1…",""],["谢谢","xièxie","thank you","Toh1 Sia4","謝謝"],["不客气","bú kèqi","you're welcome","Bo3 Khe4 Khi4","不客氣"],["喜欢","xǐhuan","to like","Ka4 E4","喜歡"],["再见","zàijiàn","goodbye","Tsay1 Ki4 / Bye","再見"],["请","qǐng","please","Tsia2","請"],["请进","qǐng jìn","please come in","Tsia2 Dip4 Lai4","請進"],["太好了！","Tài hǎo le!","Great!","Tai1 Ho1 Lo4",""],["你做得到！","Nǐ zuò de dào!","You can do it!","Di1 E3 Tsue4 Kaw4",""],["别放弃！","Bié fàngqì!","Don't give up!","Mang1 Hong1 Khi4","別放棄！"],["我爱你。","Wǒ ài nǐ.","I love you.","Gua1 Ai4 Di3","我愛你。"]].forEach(([hz,py,en,hk,tr])=>{add("everyday",hz,py,en,hk,null);if(tr)D[D.length-1].tr=tr});
 
-/* Question words, each with its example sentence; the sentences are cards too */
+/* Question words, each with its example sentence */
 const QW=[
 ["什么","shénme","what?","Sia2 Mi4",["这是什么？","Zhè shì shénme?","What is this?","Tsit4 Ge1 Si3 Sia2 Mi4?"]],
 ["谁","shéi","who?","Sia3 Nga2",["他是谁？","Tā shì shéi?","Who is he?","E1 Si3 Sia3 Nga2?"]],
@@ -57,7 +57,6 @@ const QW=[
 ["多长时间","duō cháng shíjiān","how long? (time)","Dua3 Ku1",["路上需要多长时间？","Lùshang xūyào duō cháng shíjiān?","How long will it take to get there?","Lo3 Ting1 Su1 Yaw1 Dua3 Theng2 Eh3 Si3 Kan1?"]],
 ["多远","duō yuǎn","how far?","Dua3 Heng1",["从这里到机场有多远？","Cóng zhèlǐ dào jīchǎng yǒu duō yuǎn?","How far is it from here to the airport?","Tui1 Jia2 Kaw1 Hui1 Ki1 Tiu2 Dua3 Heng1?"]]];
 QW.forEach(([hz,py,en,hk,ex])=>add("ask",hz,py,en,hk,ex.slice(0,3)));
-QW.forEach(([,,,,[hz,py,en,hk]])=>add("ask",hz,py,en,hk,null));
 
 /* Memory hooks for individual characters: [components, story] */
 const MN={
